@@ -112,7 +112,7 @@ local function loadTesoDelve(eventCode, addOnName)
             exportCharacter()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
-           exportInventory(BAG_BANK)
+            exportInventory(BAG_BANK)
             d('TesoDelve: ' .. itemsExported .. ' successfully exported')
         end
 
