@@ -44,6 +44,7 @@ local function loadTesoDelve(eventCode, addOnName)
                     local enchantInfo = {GetItemLinkEnchantInfo(itemLink) }
                     local championPoints = GetItemRequiredChampionPoints(bagSpace, i)
                     local itemLevel = GetItemRequiredLevel(bagSpace, i)
+                    local itemBound = IsItemBound(bagSpace, i)
 
                     local item = {
                         uniqueId, -- Unique ID
@@ -62,14 +63,8 @@ local function loadTesoDelve(eventCode, addOnName)
                         weaponType, -- Weapontype axe/dagger/bow etc
                         characterId, -- characters unique id
                         bagSpace, -- space enum, to see if it's a bank item
+                        tostring(itemBound),
                     }
-
-                    --d('<--- start item --->')
-                    --d(enchantInfo)
-                    --d(itemName ..": " .. tostring(itemInfo[5]) .. " - " .. tostring(itemPlayerLocked))
-                    --d(setInfo)
-                    --d(i .. ":" .. itemName .. " exported")
-                    --d(itemName .. ", " .. uniqueId .. " exported. (".. bagSpace .."-"..i..")")
 
                     itemsExported = itemsExported + 1
                     inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')
@@ -102,13 +97,13 @@ local function loadTesoDelve(eventCode, addOnName)
             local alliance = GetUnitAlliance('player')
             local ridingTime = GetTimeUntilCanBeTrained()
             local currentTime = GetTimeStamp()
+            local playerRoles = {GetPlayerRoles()}
 
-            savedVars.a_characters[characterId] = 'CHARACTER:'..characterId..";"..name..";"..class..";"..classId..";"..level..";"..championLevel..";"..race..";"..raceId..";"..alliance..";"..ridingTime..";"..currentTime
+            savedVars.a_characters[characterId] = 'CHARACTER:'..characterId..";"..name..";"..class..";"..classId..";"..level..";"..championLevel..";"..race..";"..raceId..";"..alliance..";"..ridingTime..";"..currentTime..";"..tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3])
         end
 
         local function startExport()
             itemsExported = 0
-            d('TesoDelve: Export started, exporting all your items')
             exportCharacter()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
