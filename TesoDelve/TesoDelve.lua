@@ -45,6 +45,8 @@ local function loadTesoDelve(eventCode, addOnName)
                     local championPoints = GetItemRequiredChampionPoints(bagSpace, i)
                     local itemLevel = GetItemRequiredLevel(bagSpace, i)
                     local itemBound = IsItemBound(bagSpace, i)
+                    local isJunk = IsItemJunk(bagSpace, i)
+                    local traitDescription =  {GetItemLinkTraitInfo(itemLink)}
 
                     local item = {
                         uniqueId, -- Unique ID
@@ -64,6 +66,12 @@ local function loadTesoDelve(eventCode, addOnName)
                         characterId, -- characters unique id
                         bagSpace, -- space enum, to see if it's a bank item
                         tostring(itemBound),
+                        totalCount,
+                        tostring(isJunk),
+                        itemLink,
+                        enchantInfo[3],
+                        traitDescription[2],
+                        itemStatValue,
                     }
 
                     itemsExported = itemsExported + 1
@@ -97,9 +105,10 @@ local function loadTesoDelve(eventCode, addOnName)
             local alliance = GetUnitAlliance('player')
             local ridingTime = GetTimeUntilCanBeTrained()
             local currentTime = GetTimeStamp()
-            local playerRoles = {GetPlayerRoles()}
+            local playerRoles = {GetPlayerRoles() }
+            local money = GetCarriedCurrencyAmount(CURT_MONEY)
 
-            savedVars.a_characters[characterId] = 'CHARACTER:'..characterId..";"..name..";"..class..";"..classId..";"..level..";"..championLevel..";"..race..";"..raceId..";"..alliance..";"..ridingTime..";"..currentTime..";"..tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3])
+            savedVars.a_characters[characterId] = 'CHARACTER:'..characterId..";"..name..";"..class..";"..classId..";"..level..";"..championLevel..";"..race..";"..raceId..";"..alliance..";"..ridingTime..";"..currentTime..";"..tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3])..";"..money
         end
 
         local function startExport()
@@ -120,6 +129,8 @@ local function loadTesoDelve(eventCode, addOnName)
             end
         end)
 
+        EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportBank", EVENT_CLOSE_BANK, startExport)
+        EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
     end
 end
 
