@@ -6,7 +6,8 @@ local function loadTesoDelve(eventCode, addOnName)
         local defaults =
         {
             a_characters = {},
-            inventory = {}
+            inventory = {},
+            smithing = {},
         }
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
@@ -17,15 +18,56 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.a_caracters = {}
         end
 
+        if(savedVars.smithing == nil) then
+            savedVars.smithing = {}
+        end
+
         if(savedVars.inventory[characterId] == nil) then
             savedVars.inventory[characterId] = {}
+        end
+
+
+        local function exportSmithing()
+            local smithingTypes = { CRAFTING_TYPE_BLACKSMITHING, CRAFTING_TYPE_CLOTHIER, CRAFTING_TYPE_WOODWORKING}
+
+            local timers = {}
+            for s=1,#smithingTypes do
+                for i=1, GetNumSmithingResearchLines(smithingTypes[s]) do
+                    local _,_, numTraits = GetSmithingResearchLineInfo(smithingTypes[s], i)
+                    local researchLineInfo = {GetSmithingResearchLineInfo(smithingTypes[s], i)}
+                    for t=1, numTraits do
+                        local dur, remainig = GetSmithingResearchLineTraitTimes(smithingTypes[s], i, t)
+                        local traitInfo = {GetSmithingResearchLineTraitInfo(smithingTypes[s], i, t) }
+
+                        local smithingDump = {
+                            characterId,
+                            tostring(remainig),
+                            smithingTypes[s],
+                            i,
+                            t,
+                            tostring(dur),
+                            traitInfo[1],
+                            tostring(traitInfo[2]),
+                            tostring(traitInfo[3]),
+                            tostring(researchLineInfo[1]),
+                            tostring(researchLineInfo[2]),
+                            tostring(researchLineInfo[4]),
+                            GetTimeStamp(),
+                        }
+
+                        table.insert(timers, 'SMITHING:;'..table.concat(smithingDump, ';'))
+                    end
+                end
+            end
+
+            savedVars.smithing[characterId] = timers
         end
 
         local function exportInventory(bagSpace)
             local backPackSize = GetBagSize(bagSpace)
             local inventory = {}
 
-            for i=1, backPackSize, 1 do
+            for i=0, backPackSize+1, 1 do
 
                 local itemName = GetItemName(bagSpace, i)
                 if string.len(itemName) >= 1 then
@@ -35,7 +77,7 @@ local function loadTesoDelve(eventCode, addOnName)
                     local itemArmorType = GetItemArmorType(bagSpace, i)
                     local itemType = GetItemType(bagSpace, i)
                     local weaponType = GetItemWeaponType(bagSpace, i)
-                    local totalCount = GetItemTotalCount(bagSpace, i)
+                    local totalCount = GetSlotStackSize(bagSpace, i)
                     local itemLink = GetItemLink(bagSpace, i)
                     local itemInfo =  {GetItemInfo(bagSpace, i) }
                     local itemPlayerLocked = IsItemPlayerLocked(bagSpace, i)
@@ -72,6 +114,7 @@ local function loadTesoDelve(eventCode, addOnName)
                         enchantInfo[3],
                         traitDescription[2],
                         itemStatValue,
+                        i
                     }
 
                     itemsExported = itemsExported + 1
@@ -107,13 +150,36 @@ local function loadTesoDelve(eventCode, addOnName)
             local currentTime = GetTimeStamp()
             local playerRoles = {GetPlayerRoles() }
             local money = GetCarriedCurrencyAmount(CURT_MONEY)
+            local maxResearch = {
+                GetMaxSimultaneousSmithingResearch(CRAFTING_TYPE_BLACKSMITHING),
+                GetMaxSimultaneousSmithingResearch(CRAFTING_TYPE_CLOTHIER),
+                GetMaxSimultaneousSmithingResearch(CRAFTING_TYPE_WOODWORKING)
+            }
 
-            savedVars.a_characters[characterId] = 'CHARACTER:'..characterId..";"..name..";"..class..";"..classId..";"..level..";"..championLevel..";"..race..";"..raceId..";"..alliance..";"..ridingTime..";"..currentTime..";"..tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3])..";"..money
+            local characterDump = {
+                characterId,
+                name,
+                class,
+                classId,
+                level,
+                championLevel,
+                race,
+                raceId,
+                alliance,
+                ridingTime,
+                currentTime,
+                tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3]),
+                money,
+                table.concat(maxResearch, '-')
+            }
+
+            savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
         end
 
         local function startExport()
             itemsExported = 0
             exportCharacter()
+            exportSmithing()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
             exportInventory(BAG_BANK)
