@@ -35,46 +35,43 @@ local function loadTesoDelve(eventCode, addOnName)
         local function exportItemsStyle()
 
             local itemStyles = {}
-            if(savedVars.settings[characterId] and savedVars.settings[characterId]['export-smithingstyles'] == 1) then
 
+            for i=1, GetNumSmithingStyleItems() do
+                local styleInfo = {GetSmithingStyleItemInfo(i)}
+                local smithingStyleItemCount = GetCurrentSmithingStyleItemCount()
 
-                for i=1, GetNumSmithingStyleItems() do
-                    local styleInfo = {GetSmithingStyleItemInfo(i)}
-                    local smithingStyleItemCount = GetCurrentSmithingStyleItemCount()
+                local chapters = {
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_ALL)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_AXE)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BELTS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOOTS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOWS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_CHESTS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_DAGGERS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_GLOVES)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_HELMETS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_LEGS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_MACES)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHIELDS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHOULDERS)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_STAVES)),
+                    tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SWORDS)),
+                }
 
-                    local chapters = {
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_ALL)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_AXE)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BELTS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOOTS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOWS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_CHESTS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_DAGGERS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_GLOVES)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_HELMETS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_LEGS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_MACES)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHIELDS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHOULDERS)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_STAVES)),
-                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SWORDS)),
-                    }
+                local itemStyleDump = {
+                    characterId,
+                    i,
+                    styleInfo[1],
+                    styleInfo[2],
+                    styleInfo[5],
+                    smithingStyleItemCount,
+                    table.concat(chapters, '-')
+                }
 
-                    local itemStyleDump = {
-                        characterId,
-                        i,
-                        styleInfo[1],
-                        styleInfo[2],
-                        styleInfo[5],
-                        smithingStyleItemCount,
-                        table.concat(chapters, '-')
-                    }
-
-                    table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
-                end
-
-                d('TesoDelve: exported known motifs')
+                table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
             end
+
+            d('TesoDelve: exported known motifs')
 
             savedVars.itemStyles[characterId] = itemStyles
         end
