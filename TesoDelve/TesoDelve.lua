@@ -8,6 +8,8 @@ local function loadTesoDelve(eventCode, addOnName)
             a_characters = {},
             inventory = {},
             smithing = {},
+            itemStyles = {},
+            settings = {},
         }
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
@@ -22,10 +24,60 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.smithing = {}
         end
 
+        if(savedVars.itemStyles == nil) then
+            savedVars.itemStyles = {}
+        end
+
         if(savedVars.inventory[characterId] == nil) then
             savedVars.inventory[characterId] = {}
         end
 
+        local function exportItemsStyle()
+
+            local itemStyles = {}
+            if(savedVars.settings[characterId] and savedVars.settings[characterId]['export-smithingstyles'] == 1) then
+
+
+                for i=1, GetNumSmithingStyleItems() do
+                    local styleInfo = {GetSmithingStyleItemInfo(i)}
+                    local smithingStyleItemCount = GetCurrentSmithingStyleItemCount()
+
+                    local chapters = {
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_ALL)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_AXE)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BELTS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOOTS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_BOWS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_CHESTS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_DAGGERS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_GLOVES)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_HELMETS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_LEGS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_MACES)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHIELDS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SHOULDERS)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_STAVES)),
+                        tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SWORDS)),
+                    }
+
+                    local itemStyleDump = {
+                        characterId,
+                        i,
+                        styleInfo[1],
+                        styleInfo[2],
+                        styleInfo[5],
+                        smithingStyleItemCount,
+                        table.concat(chapters, '-')
+                    }
+
+                    table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
+                end
+
+                d('TesoDelve: exported known motifs')
+            end
+
+            savedVars.itemStyles[characterId] = itemStyles
+        end
 
         local function exportSmithing()
             local smithingTypes = { CRAFTING_TYPE_BLACKSMITHING, CRAFTING_TYPE_CLOTHIER, CRAFTING_TYPE_WOODWORKING}
@@ -75,7 +127,7 @@ local function loadTesoDelve(eventCode, addOnName)
                     local itemTrait = GetItemTrait(bagSpace, i)
                     local itemStatValue = GetItemStatValue(bagSpace, i)
                     local itemArmorType = GetItemArmorType(bagSpace, i)
-                    local itemType = GetItemType(bagSpace, i)
+                    local itemType = {GetItemType(bagSpace, i)}
                     local weaponType = GetItemWeaponType(bagSpace, i)
                     local totalCount = GetSlotStackSize(bagSpace, i)
                     local itemLink = GetItemLink(bagSpace, i)
@@ -88,7 +140,8 @@ local function loadTesoDelve(eventCode, addOnName)
                     local itemLevel = GetItemRequiredLevel(bagSpace, i)
                     local itemBound = IsItemBound(bagSpace, i)
                     local isJunk = IsItemJunk(bagSpace, i)
-                    local traitDescription =  {GetItemLinkTraitInfo(itemLink)}
+                    local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
+                    local itemLink
 
                     local item = {
                         uniqueId, -- Unique ID
@@ -101,7 +154,7 @@ local function loadTesoDelve(eventCode, addOnName)
                         tostring(itemPlayerLocked), -- Locked?
                         enchantInfo[2], -- ItemLink enchant
                         itemInfo[1], -- icon,
-                        itemType, -- Itemtype /armor/jewelry/weapon etc
+                        itemType[1], -- Itemtype /armor/jewelry/weapon etc
                         championPoints, -- cp needed
                         itemLevel, -- level neeeded
                         weaponType, -- Weapontype axe/dagger/bow etc
@@ -114,7 +167,9 @@ local function loadTesoDelve(eventCode, addOnName)
                         enchantInfo[3],
                         traitDescription[2],
                         itemStatValue,
-                        i
+                        i,
+                        itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
+                        itemInfo[7], -- ItemStyle
                     }
 
                     itemsExported = itemsExported + 1
@@ -170,7 +225,9 @@ local function loadTesoDelve(eventCode, addOnName)
                 currentTime,
                 tostring(playerRoles[1]).."-"..tostring(playerRoles[2]).."-"..tostring(playerRoles[3]),
                 money,
-                table.concat(maxResearch, '-')
+                table.concat(maxResearch, '-'),
+                GetWorldName(),
+                GetDisplayName()
             }
 
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
@@ -179,6 +236,7 @@ local function loadTesoDelve(eventCode, addOnName)
         local function startExport()
             itemsExported = 0
             exportCharacter()
+            --            exportItemsStyle()
             exportSmithing()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
@@ -186,7 +244,26 @@ local function loadTesoDelve(eventCode, addOnName)
             d('TesoDelve: ' .. itemsExported .. ' successfully exported')
         end
 
+
+        local function enableSmithingStyles()
+            if(savedVars.settings[characterId] == nil) then
+                savedVars.settings[characterId] = {}
+            end
+
+            savedVars.settings[characterId]['export-smithingstyles'] = 1
+        end
+
+        local function disableSmithingStyle()
+            if(savedVars.settings[characterId] == nil) then
+                savedVars.settings[characterId] = {}
+            end
+
+            savedVars.settings[characterId]['export-smithingstyles'] = 0
+        end
+
         SLASH_COMMANDS["/tesodelve"] = startExport
+        SLASH_COMMANDS["/enable-smithingstyles"] = enableSmithingStyles
+        SLASH_COMMANDS["/disable-smithingstyles"] = disableSmithingStyle
 
         local inventoryScene = SCENE_MANAGER:GetScene("inventory")
         inventoryScene:RegisterCallback("StateChange", function(oldState, newState)
@@ -197,6 +274,8 @@ local function loadTesoDelve(eventCode, addOnName)
 
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportBank", EVENT_CLOSE_BANK, startExport)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
+        EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
+        EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportItemStyles", EVENT_CRAFTING_STATION_INTERACT, exportItemsStyle)
     end
 end
 
