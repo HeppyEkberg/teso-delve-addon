@@ -224,7 +224,9 @@ local function loadTesoDelve(eventCode, addOnName)
                 money,
                 table.concat(maxResearch, '-'),
                 GetWorldName(),
-                GetDisplayName()
+                GetDisplayName(),
+                GetBagSize(BAG_BACKPACK),
+                GetBagSize(BAG_BANK)
             }
 
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
