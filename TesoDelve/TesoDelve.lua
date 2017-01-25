@@ -32,6 +32,8 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.inventory[characterId] = {}
         end
 
+
+
         local function exportItemsStyle()
 
             local itemStyles = {}
@@ -65,7 +67,8 @@ local function loadTesoDelve(eventCode, addOnName)
                     styleInfo[2],
                     styleInfo[5],
                     smithingStyleItemCount,
-                    table.concat(chapters, '-')
+                    table.concat(chapters, '-'),
+                    GetCVar("language.2")
                 }
 
                 table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
@@ -102,6 +105,7 @@ local function loadTesoDelve(eventCode, addOnName)
                             tostring(researchLineInfo[2]),
                             tostring(researchLineInfo[4]),
                             GetTimeStamp(),
+                            GetCVar("language.2"),
                         }
 
                         table.insert(timers, 'SMITHING:;'..table.concat(smithingDump, ';'))
@@ -167,6 +171,7 @@ local function loadTesoDelve(eventCode, addOnName)
                         i,
                         itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
                         itemInfo[7], -- ItemStyle
+                        GetCVar("language.2") -- Client language
                     }
 
                     itemsExported = itemsExported + 1
@@ -226,7 +231,8 @@ local function loadTesoDelve(eventCode, addOnName)
                 GetWorldName(),
                 GetDisplayName(),
                 GetBagSize(BAG_BACKPACK),
-                GetBagSize(BAG_BANK)
+                GetBagSize(BAG_BANK),
+                GetCVar("language.2")
             }
 
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
