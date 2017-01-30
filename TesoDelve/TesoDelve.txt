@@ -1,7 +1,7 @@
 ## APIVersion: 100017
 ## Title: TesoDelve
 ## Description: Exports items and character info so you can organize your items on TesoDelve
-## Version 1.0.0
+## Version 1.0.2
 ## SavedVariables: TesoDelve
 
 TesoDelve.lua

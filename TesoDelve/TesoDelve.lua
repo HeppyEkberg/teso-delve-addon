@@ -41,6 +41,7 @@ local function loadTesoDelve(eventCode, addOnName)
             for i=1, GetNumSmithingStyleItems() do
                 local styleInfo = {GetSmithingStyleItemInfo(i)}
                 local smithingStyleItemCount = GetCurrentSmithingStyleItemCount()
+                local export = false
 
                 local chapters = {
                     tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_ALL)),
@@ -60,6 +61,13 @@ local function loadTesoDelve(eventCode, addOnName)
                     tostring(IsSmithingStyleKnown(i, ITEM_STYLE_CHAPTER_SWORDS)),
                 }
 
+                for index, value in ipairs (chapters) do
+                    if value == 'true' then
+                        export = true
+                    end
+                end
+
+
                 local itemStyleDump = {
                     characterId,
                     i,
@@ -71,7 +79,9 @@ local function loadTesoDelve(eventCode, addOnName)
                     GetCVar("language.2")
                 }
 
-                table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
+                if(export) then
+                    table.insert(itemStyles, 'ITEMSTYLE:;'..table.concat(itemStyleDump, ';'))
+                end
             end
 
             d('TesoDelve: exported known motifs')
@@ -90,6 +100,7 @@ local function loadTesoDelve(eventCode, addOnName)
                     for t=1, numTraits do
                         local dur, remainig = GetSmithingResearchLineTraitTimes(smithingTypes[s], i, t)
                         local traitInfo = {GetSmithingResearchLineTraitInfo(smithingTypes[s], i, t) }
+                        local export = false
 
                         local smithingDump = {
                             characterId,
@@ -108,7 +119,17 @@ local function loadTesoDelve(eventCode, addOnName)
                             GetCVar("language.2"),
                         }
 
-                        table.insert(timers, 'SMITHING:;'..table.concat(smithingDump, ';'))
+                        if not remaining == nil then
+                            export = true
+                        end
+
+                        if traitInfo[3] == true then
+                            export = true;
+                        end
+
+                        if export then
+                            table.insert(timers, 'SMITHING:;'..table.concat(smithingDump, ';'))
+                        end
                     end
                 end
             end
@@ -241,7 +262,6 @@ local function loadTesoDelve(eventCode, addOnName)
         local function startExport()
             itemsExported = 0
             exportCharacter()
-            --            exportItemsStyle()
             exportSmithing()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
@@ -281,6 +301,7 @@ local function loadTesoDelve(eventCode, addOnName)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportItemStyles", EVENT_CRAFTING_STATION_INTERACT, exportItemsStyle)
+        EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportHorseTraining", EVENT_RIDING_SKILL_IMPROVEMENT, exportCharacter)
     end
 end
 
