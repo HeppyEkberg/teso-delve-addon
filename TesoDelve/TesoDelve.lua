@@ -1,4 +1,8 @@
 
+local function isempty(s)
+    return s == nil or s == ''
+end
+
 local function loadTesoDelve(eventCode, addOnName)
 
     if(addOnName == "TesoDelve") then
@@ -11,6 +15,8 @@ local function loadTesoDelve(eventCode, addOnName)
             itemStyles = {},
             settings = {},
         }
+
+
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
         local characterId = GetCurrentCharacterId()
@@ -119,11 +125,11 @@ local function loadTesoDelve(eventCode, addOnName)
                             GetCVar("language.2"),
                         }
 
-                        if not remaining == nil then
+                        if not isempty(remainig) then
                             export = true
                         end
 
-                        if traitInfo[3] == true then
+                        if traitInfo[3] then
                             export = true;
                         end
 
