@@ -14,8 +14,9 @@ local function loadTesoDelve(eventCode, addOnName)
             smithing = {},
             itemStyles = {},
             settings = {},
+            guilds = {},
+            gMembers = {},
         }
-
 
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
@@ -34,11 +35,61 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.itemStyles = {}
         end
 
+        if(savedVars.guilds == nil) then
+            savedVars.guilds = {}
+        end
+
+        if(savedVars.gMembers == nil) then
+            savedVars.gMembers = {}
+        end
+
         if(savedVars.inventory[characterId] == nil) then
             savedVars.inventory[characterId] = {}
         end
 
+        local function exportGuilds()
+            if(savedVars.gMembers == nil) then
+                savedVars.gMembers = {}
+            end
 
+            local guilds = {}
+
+            for i=1, GetNumGuilds(), 1 do
+                local members = {}
+                local guild_id = GetGuildId(i)
+                local membersCount = GetNumGuildMembers(guild_id)
+
+                for memberIndex=0, membersCount, 1 do
+
+                    local memberInfo = {GetGuildMemberInfo(guild_id, memberIndex)}
+                    local memberDump = {
+                        GetGuildName(guild_id),
+                        guild_id,
+                        memberInfo[1],
+                        memberInfo[2],
+                        memberInfo[3],
+                        memberInfo[4],
+                        memberInfo[5],
+                        GetTimeStamp(),
+                    }
+
+                    table.insert(members, "GUILDMEMBER:;"..table.concat(memberDump, ';') .. ";")
+                end
+
+                local guild = {
+                    GetGuildName(guild_id),
+                    GetGuildDescription(guild_id),
+                    GetGuildMotD(guild_id),
+                    GetGuildFoundedDate(guild_id),
+                    membersCount,
+                }
+
+                savedVars.gMembers[guild_id] = members
+                table.insert(guilds, "GUILD:;"..table.concat(guild, ';') .. ";")
+            end
+
+            savedVars.guilds = guilds
+        end
 
         local function exportItemsStyle()
 
@@ -259,7 +310,8 @@ local function loadTesoDelve(eventCode, addOnName)
                 GetDisplayName(),
                 GetBagSize(BAG_BACKPACK),
                 GetBagSize(BAG_BANK),
-                GetCVar("language.2")
+                GetCVar("language.2"),
+                table.concat({GetRidingStats()}, '-')
             }
 
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
@@ -269,6 +321,7 @@ local function loadTesoDelve(eventCode, addOnName)
             itemsExported = 0
             exportCharacter()
             exportSmithing()
+            exportGuilds()
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
             exportInventory(BAG_BANK)
@@ -312,5 +365,4 @@ local function loadTesoDelve(eventCode, addOnName)
 end
 
 EVENT_MANAGER:RegisterForEvent("TesoDelveLoaded", EVENT_ADD_ON_LOADED, loadTesoDelve)
-
 
