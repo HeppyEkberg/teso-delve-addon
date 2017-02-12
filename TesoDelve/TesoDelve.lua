@@ -59,7 +59,7 @@ local function loadTesoDelve(eventCode, addOnName)
                 local guild_id = GetGuildId(i)
                 local membersCount = GetNumGuildMembers(guild_id)
 
-                for memberIndex=0, membersCount, 1 do
+                for memberIndex=1, membersCount, 1 do
 
                     local memberInfo = {GetGuildMemberInfo(guild_id, memberIndex)}
                     local memberDump = {
@@ -71,6 +71,8 @@ local function loadTesoDelve(eventCode, addOnName)
                         memberInfo[4],
                         memberInfo[5],
                         GetTimeStamp(),
+                        GetWorldName(),
+                        GetDisplayName(),
                     }
 
                     table.insert(members, "GUILDMEMBER:;"..table.concat(memberDump, ';') .. ";")
@@ -82,6 +84,9 @@ local function loadTesoDelve(eventCode, addOnName)
                     GetGuildMotD(guild_id),
                     GetGuildFoundedDate(guild_id),
                     membersCount,
+                    GetWorldName(),
+                    GetDisplayName(),
+                    guild_id,
                 }
 
                 savedVars.gMembers[guild_id] = members
@@ -220,7 +225,6 @@ local function loadTesoDelve(eventCode, addOnName)
                     local itemBound = IsItemBound(bagSpace, i)
                     local isJunk = IsItemJunk(bagSpace, i)
                     local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
-                    local itemLink
 
                     local item = {
                         uniqueId, -- Unique ID
@@ -317,6 +321,79 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
         end
 
+        local function exportCraftingBag()
+            if not HasCraftBagAccess then
+                savedVars.inventory['craftBag'] = {}
+                return true
+            end
+
+            local inventory = {}
+            local bagSpace = BAG_VIRTUAL
+
+
+            for index, data in pairs(SHARED_INVENTORY.bagCache[BAG_VIRTUAL])do
+                if data ~= nil then
+                    local i = data.slotIndex
+                    local itemName = GetItemName(bagSpace, i)
+                    local uniqueId = GetItemUniqueId(bagSpace, i)
+                    local itemTrait = GetItemTrait(bagSpace, i)
+                    local itemStatValue = GetItemStatValue(bagSpace, i)
+                    local itemArmorType = GetItemArmorType(bagSpace, i)
+                    local itemType = {GetItemType(bagSpace, i)}
+                    local weaponType = GetItemWeaponType(bagSpace, i)
+                    local totalCount = GetSlotStackSize(bagSpace, i)
+                    local itemLink = GetItemLink(bagSpace, i)
+                    local itemInfo =  {GetItemInfo(bagSpace, i) }
+                    local itemPlayerLocked = IsItemPlayerLocked(bagSpace, i)
+                    local quality = GetItemLinkQuality(itemLink)
+                    local setInfo =  {GetItemLinkSetInfo(itemLink, true) }
+                    local enchantInfo = {GetItemLinkEnchantInfo(itemLink) }
+                    local championPoints = GetItemRequiredChampionPoints(bagSpace, i)
+                    local itemLevel = GetItemRequiredLevel(bagSpace, i)
+                    local itemBound = IsItemBound(bagSpace, i)
+                    local isJunk = IsItemJunk(bagSpace, i)
+                    local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
+
+                    local item = {
+                        uniqueId, -- Unique ID
+                        itemName, -- Name
+                        itemTrait, -- Trait
+                        itemInfo[6], -- EquipType
+                        setInfo[2], -- SetName
+                        quality, -- Quality
+                        itemArmorType, -- Heavy/Medium/Light armor
+                        tostring(itemPlayerLocked), -- Locked?
+                        enchantInfo[2], -- ItemLink enchant
+                        itemInfo[1], -- icon,
+                        itemType[1], -- Itemtype /armor/jewelry/weapon etc
+                        championPoints, -- cp needed
+                        itemLevel, -- level neeeded
+                        weaponType, -- Weapontype axe/dagger/bow etc
+                        characterId, -- characters unique id
+                        bagSpace, -- space enum, to see if it's a bank item
+                        tostring(itemBound),
+                        totalCount,
+                        tostring(isJunk),
+                        itemLink,
+                        enchantInfo[3],
+                        traitDescription[2],
+                        itemStatValue,
+                        i,
+                        itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
+                        itemInfo[7], -- ItemStyle
+                        GetCVar("language.2") -- Client language
+                    }
+
+                    itemsExported = itemsExported + 1
+                    inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')
+                end
+            end
+
+            savedVars.inventory['craftBag'] = {}
+            savedVars.inventory['craftBag'] = inventory
+
+        end
+
         local function startExport()
             itemsExported = 0
             exportCharacter()
@@ -325,6 +402,7 @@ local function loadTesoDelve(eventCode, addOnName)
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
             exportInventory(BAG_BANK)
+            exportCraftingBag()
             d('TesoDelve: ' .. itemsExported .. ' successfully exported')
         end
 
