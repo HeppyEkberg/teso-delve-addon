@@ -75,13 +75,13 @@ local function loadTesoDelve(eventCode, addOnName)
                         GetDisplayName(),
                     }
 
-                    table.insert(members, "GUILDMEMBER:;"..table.concat(memberDump, ';') .. ";")
+                    table.insert(members, "GUILDMEMBER:;--;"..table.concat(memberDump, ';--;') .. ";--;")
                 end
 
                 local guild = {
                     GetGuildName(guild_id),
-                    GetGuildDescription(guild_id),
-                    GetGuildMotD(guild_id),
+                    '',
+                    '',
                     GetGuildFoundedDate(guild_id),
                     membersCount,
                     GetWorldName(),
@@ -90,7 +90,7 @@ local function loadTesoDelve(eventCode, addOnName)
                 }
 
                 savedVars.gMembers[guild_id] = members
-                table.insert(guilds, "GUILD:;"..table.concat(guild, ';') .. ";")
+                table.insert(guilds, "GUILD:;--;"..table.concat(guild, ';--;') .. ";--;")
             end
 
             savedVars.guilds = guilds
