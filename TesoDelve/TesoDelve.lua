@@ -6,6 +6,7 @@ end
 local function loadTesoDelve(eventCode, addOnName)
 
     if(addOnName == "TesoDelve") then
+        d('Initializing TesoDelve version 1.0.8')
 
         local defaults =
         {
@@ -315,7 +316,8 @@ local function loadTesoDelve(eventCode, addOnName)
                 GetBagSize(BAG_BACKPACK),
                 GetBagSize(BAG_BANK),
                 GetCVar("language.2"),
-                table.concat({GetRidingStats()}, '-')
+                table.concat({GetRidingStats()}, '-'),
+                table.concat({GetAttributeSpentPoints(ATTRIBUTE_MAGICKA), GetAttributeSpentPoints(ATTRIBUTE_HEALTH), GetAttributeSpentPoints(ATTRIBUTE_STAMINA)}, '-')
             }
 
             savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
@@ -443,4 +445,3 @@ local function loadTesoDelve(eventCode, addOnName)
 end
 
 EVENT_MANAGER:RegisterForEvent("TesoDelveLoaded", EVENT_ADD_ON_LOADED, loadTesoDelve)
-
