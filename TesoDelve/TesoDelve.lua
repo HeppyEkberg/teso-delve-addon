@@ -17,6 +17,7 @@ local function loadTesoDelve(eventCode, addOnName)
             settings = {},
             guilds = {},
             gMembers = {},
+            skills = {},
         }
 
 
@@ -47,6 +48,19 @@ local function loadTesoDelve(eventCode, addOnName)
         if(savedVars.inventory[characterId] == nil) then
             savedVars.inventory[characterId] = {}
         end
+
+        if(savedVars.skills[characterId] == nil) then
+            savedVars.skills[characterId] = {}
+        end
+
+        if(savedVars.settings[characterId] == nil) then
+            savedVars.settings[characterId] = {}
+        end
+
+        if(savedVars.settings['export-all-skills'] == nil)then
+            savedVars.settings['export-all-skills'] = 0
+        end
+
 
         local function exportGuilds()
             if(savedVars.gMembers == nil) then
@@ -296,6 +310,9 @@ local function loadTesoDelve(eventCode, addOnName)
                 GetMaxSimultaneousSmithingResearch(CRAFTING_TYPE_WOODWORKING)
             }
 
+            local skillPoints = GetAvailableSkillPoints()
+            local numSkyshards = GetNumSkyShards()
+
             local characterDump = {
                 characterId,
                 name,
@@ -317,10 +334,12 @@ local function loadTesoDelve(eventCode, addOnName)
                 GetBagSize(BAG_BANK),
                 GetCVar("language.2"),
                 table.concat({GetRidingStats()}, '-'),
-                table.concat({GetAttributeSpentPoints(ATTRIBUTE_MAGICKA), GetAttributeSpentPoints(ATTRIBUTE_HEALTH), GetAttributeSpentPoints(ATTRIBUTE_STAMINA)}, '-')
+                table.concat({GetAttributeSpentPoints(ATTRIBUTE_MAGICKA), GetAttributeSpentPoints(ATTRIBUTE_HEALTH), GetAttributeSpentPoints(ATTRIBUTE_STAMINA)}, '-'),
+                skillPoints,
+                numSkyshards,
             }
 
-            savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')
+            savedVars.a_characters[characterId] = 'CHARACTER:'..table.concat(characterDump, ';')..';'
         end
 
         local function exportCraftingBag()
@@ -396,6 +415,75 @@ local function loadTesoDelve(eventCode, addOnName)
 
         end
 
+        local function exportAbilities()
+            savedVars.skills[characterId] = {}
+
+            local nskilltypes = GetNumSkillTypes()
+            for skilltype = 1, nskilltypes do
+                local nskilllines = GetNumSkillLines(skilltype)
+
+                for skillline = 1, nskilllines do
+                    local skillname, skillrank = GetSkillLineInfo(skilltype, skillline)
+
+                    local nabilities  = GetNumSkillAbilities(skilltype, skillline)
+                    for ability = 1, nabilities do
+                        local abilityname, abilitytexture, abilityrank, ispassive, isultimate, ispurchased, progression = GetSkillAbilityInfo(skilltype, skillline, ability)
+                        local passivestring = " (passive)"
+
+                        if(savedVars.settings['export-all-skills'] == 1 or ispurchased) then
+                            if not progression then
+                                progression = 0
+                            end
+
+                            local basename = nil
+                            local morph = 0
+                            local rank = nil
+
+                            local basename, morph, rank = GetAbilityProgressionInfo(progression)
+                            local abilityId = GetSkillAbilityId(skilltype, skillline, ability, false)
+                            local castInfo = {GetAbilityCastInfo(abilityId) }
+                            local roles = {GetAbilityRoles(abilityId)}
+
+                            local abilityData = {
+                                characterId,
+                                skilltype,
+                                skillline,
+                                skillname,
+                                skillrank,
+                                ability,
+                                abilityname,
+                                abilitytexture,
+                                abilityrank,
+                                tostring(ispassive),
+                                tostring(isultimate),
+                                tostring(ispurchased),
+                                progression,
+                                passivestring,
+                                basename,
+                                morph,
+                                rank,
+                                GetAbilityDescriptionHeader(abilityId),
+                                GetAbilityDescription(abilityId),
+                                table.concat({tostring(castInfo[1]), castInfo[2], castInfo[3]}, '-'),
+                                tostring(GetAbilityTargetDescription(abilityId)),
+                                table.concat({GetAbilityRange(abilityId)}, '-'),
+                                GetAbilityRadius(abilityId),
+                                GetAbilityAngleDistance(abilityId),
+                                GetAbilityDuration(abilityId),
+                                table.concat({GetAbilityCost(abilityId)}, '-'),
+                                table.concat({tostring(roles[1]), tostring(roles[2]), tostring(roles[3])}, '-'),
+                                GetAbilityEffectDescription(abilityId),
+                                tostring(DoesAbilityExist(abilityId)),
+                                table.concat({GetSkillAbilityUpgradeInfo(skilltype, skillline, ability)}, '-'),
+                            }
+
+                            savedVars.skills[characterId][skilltype .. '-' .. skillline .. '-' .. ability] = "ABILITY;--;"..table.concat(abilityData, ';--;')..";--;"
+                        end
+                    end
+                end
+            end
+        end
+
         local function startExport()
             itemsExported = 0
             exportCharacter()
@@ -405,6 +493,7 @@ local function loadTesoDelve(eventCode, addOnName)
             exportInventory(BAG_WORN)
             exportInventory(BAG_BANK)
             exportCraftingBag()
+            exportAbilities()
             d('TesoDelve: ' .. itemsExported .. ' successfully exported')
         end
 
@@ -425,9 +514,19 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.settings[characterId]['export-smithingstyles'] = 0
         end
 
+        local function exportAllSkills()
+            savedVars.settings['export-all-skills'] = 1 - savedVars.settings['export-all-skills']
+            if(savedVars.settings['export-all-skills'] == 1) then
+                d('TesoDelve: Exporting all skills and abilities')
+            else
+                d('TesoDelve: Exporting only known skills and abilities')
+            end
+        end
+
         SLASH_COMMANDS["/tesodelve"] = startExport
         SLASH_COMMANDS["/enable-smithingstyles"] = enableSmithingStyles
         SLASH_COMMANDS["/disable-smithingstyles"] = disableSmithingStyle
+        SLASH_COMMANDS["/td-skills"] = exportAllSkills
 
         local inventoryScene = SCENE_MANAGER:GetScene("inventory")
         inventoryScene:RegisterCallback("StateChange", function(oldState, newState)
