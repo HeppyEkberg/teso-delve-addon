@@ -65,7 +65,7 @@ local function loadTesoDelve(eventCode, addOnName)
         local isMuted = savedVars.settings['mute']
 
         local function exportGuilds()
-            if(savedVars.gMembers) then
+            if(type(savedVars.gMembers) == 'table') then
                 savedVars.gMembers = {}
             end
 
