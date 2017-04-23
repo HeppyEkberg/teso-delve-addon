@@ -6,7 +6,7 @@ end
 local function loadTesoDelve(eventCode, addOnName)
 
     if(addOnName == "TesoDelve") then
-        d('Initializing TesoDelve version 1.0.8')
+
 
         local defaults =
         {
@@ -20,6 +20,7 @@ local function loadTesoDelve(eventCode, addOnName)
             skills = {},
         }
 
+        local tdVersion = "1.0.10";
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
         local characterId = GetCurrentCharacterId()
@@ -41,10 +42,6 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.guilds = {}
         end
 
-        if(savedVars.gMembers == nil) then
-            savedVars.gMembers = {}
-        end
-
         if(savedVars.inventory[characterId] == nil) then
             savedVars.inventory[characterId] = {}
         end
@@ -61,37 +58,21 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.settings['export-all-skills'] = 0
         end
 
+        if(savedVars.settings['mute'] == nil) then
+            savedVars.settings['mute'] = 0
+        end
+
+        local isMuted = savedVars.settings['mute']
 
         local function exportGuilds()
-            if(savedVars.gMembers == nil) then
+            if(savedVars.gMembers) then
                 savedVars.gMembers = {}
             end
 
             local guilds = {}
 
             for i=1, GetNumGuilds(), 1 do
-                local members = {}
                 local guild_id = GetGuildId(i)
-                local membersCount = GetNumGuildMembers(guild_id)
-
-                for memberIndex=1, membersCount, 1 do
-
-                    local memberInfo = {GetGuildMemberInfo(guild_id, memberIndex)}
-                    local memberDump = {
-                        GetGuildName(guild_id),
-                        guild_id,
-                        memberInfo[1],
-                        memberInfo[2],
-                        memberInfo[3],
-                        memberInfo[4],
-                        memberInfo[5],
-                        GetTimeStamp(),
-                        GetWorldName(),
-                        GetDisplayName(),
-                    }
-
-                    table.insert(members, "GUILDMEMBER:;--;"..table.concat(memberDump, ';--;') .. ";--;")
-                end
 
                 local guild = {
                     GetGuildName(guild_id),
@@ -104,7 +85,6 @@ local function loadTesoDelve(eventCode, addOnName)
                     guild_id,
                 }
 
-                savedVars.gMembers[guild_id] = members
                 table.insert(guilds, "GUILD:;--;"..table.concat(guild, ';--;') .. ";--;")
             end
 
@@ -161,7 +141,10 @@ local function loadTesoDelve(eventCode, addOnName)
                 end
             end
 
-            d('TesoDelve: exported known motifs')
+            if isMuted == 0 then
+                d('TesoDelve: exported known motifs')
+            end
+
 
             savedVars.itemStyles[characterId] = itemStyles
         end
@@ -475,6 +458,7 @@ local function loadTesoDelve(eventCode, addOnName)
                                 GetAbilityEffectDescription(abilityId),
                                 tostring(DoesAbilityExist(abilityId)),
                                 table.concat({GetSkillAbilityUpgradeInfo(skilltype, skillline, ability)}, '-'),
+                                GetCVar("language.2"), -- Client language
                             }
 
                             savedVars.skills[characterId][skilltype .. '-' .. skillline .. '-' .. ability] = "ABILITY;--;"..table.concat(abilityData, ';--;')..";--;"
@@ -494,9 +478,22 @@ local function loadTesoDelve(eventCode, addOnName)
             exportInventory(BAG_BANK)
             exportCraftingBag()
             exportAbilities()
-            d('TesoDelve: ' .. itemsExported .. ' successfully exported')
+
+            if isMuted == 0 then
+                d('TesoDelve: ' .. itemsExported .. ' successfully exported')
+            end
         end
 
+        local function toggleMute()
+            if(savedVars.settings['mute'] == 0) then
+                d('TesoDelve: Muting export messages.')
+            else
+                d('TesoDelve: Enabling export messages.')
+            end
+
+            savedVars.settings['mute'] = 1 - savedVars.settings['mute']
+            isMuted = savedVars.settings['mute']
+        end
 
         local function enableSmithingStyles()
             if(savedVars.settings[characterId] == nil) then
@@ -527,6 +524,8 @@ local function loadTesoDelve(eventCode, addOnName)
         SLASH_COMMANDS["/enable-smithingstyles"] = enableSmithingStyles
         SLASH_COMMANDS["/disable-smithingstyles"] = disableSmithingStyle
         SLASH_COMMANDS["/td-skills"] = exportAllSkills
+        SLASH_COMMANDS["/td-mute"] = toggleMute
+
 
         local inventoryScene = SCENE_MANAGER:GetScene("inventory")
         inventoryScene:RegisterCallback("StateChange", function(oldState, newState)
@@ -540,6 +539,12 @@ local function loadTesoDelve(eventCode, addOnName)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportGuildBank", EVENT_CLOSE_GUILD_BANK, startExport)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportItemStyles", EVENT_CRAFTING_STATION_INTERACT, exportItemsStyle)
         EVENT_MANAGER:RegisterForEvent("TesoDelveStartExportHorseTraining", EVENT_RIDING_SKILL_IMPROVEMENT, exportCharacter)
+
+        if isMuted == 0 then
+            d('Initializing TesoDelve version ' .. tdVersion)
+        end
+
+
     end
 end
 
