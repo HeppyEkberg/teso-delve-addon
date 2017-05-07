@@ -20,7 +20,7 @@ local function loadTesoDelve(eventCode, addOnName)
             skills = {},
         }
 
-        local tdVersion = "1.0.10";
+        local tdVersion = "1.0.11";
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
         local characterId = GetCurrentCharacterId()
@@ -73,16 +73,20 @@ local function loadTesoDelve(eventCode, addOnName)
 
             for i=1, GetNumGuilds(), 1 do
                 local guild_id = GetGuildId(i)
+                local guildInfo = {GetGuildInfo(guild_id)}
 
                 local guild = {
                     GetGuildName(guild_id),
-                    '',
-                    '',
+                    'null',
+                    'null',
                     GetGuildFoundedDate(guild_id),
                     membersCount,
                     GetWorldName(),
                     GetDisplayName(),
                     guild_id,
+                    GetGuildOwnedKioskInfo(guild_id),
+                    guildInfo[3],
+                    GetGuildAlliance(guild_id),
                 }
 
                 table.insert(guilds, "GUILD:;--;"..table.concat(guild, ';--;') .. ";--;")
@@ -133,7 +137,7 @@ local function loadTesoDelve(eventCode, addOnName)
                     styleInfo[5],
                     smithingStyleItemCount,
                     table.concat(chapters, '-'),
-                    GetCVar("language.2")
+                    GetCVar("language.2"),
                 }
 
                 if(export) then
