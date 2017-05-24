@@ -62,6 +62,8 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.settings['mute'] = 0
         end
 
+        savedVars['td-version'] = "TD-VERSION;--;"..tdVersion..";--;";
+
         local isMuted = savedVars.settings['mute']
 
         local function exportGuilds()
@@ -255,11 +257,11 @@ local function loadTesoDelve(eventCode, addOnName)
                         i,
                         itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
                         itemInfo[7], -- ItemStyle
-                        GetCVar("language.2") -- Client language
+                        GetCVar("language.2"), -- Client language
                     }
 
                     itemsExported = itemsExported + 1
-                    inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')
+                    inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')..";"
 
                 end
             end
