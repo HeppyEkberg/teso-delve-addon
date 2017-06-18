@@ -20,7 +20,7 @@ local function loadTesoDelve(eventCode, addOnName)
             skills = {},
         }
 
-        local tdVersion = "1.0.11";
+        local tdVersion = "1.0.12";
 
         local savedVars = ZO_SavedVars:NewAccountWide("TesoDelve", 1, nil, defaults)
         local characterId = GetCurrentCharacterId()
@@ -155,6 +155,70 @@ local function loadTesoDelve(eventCode, addOnName)
             savedVars.itemStyles[characterId] = itemStyles
         end
 
+        local function exportItem(bagSpace, index)
+            local backPackNumber = bagSpace
+
+            -- Merge the new BAG_SUBSCRIBER_BANK with the old bank bag per morrowind
+            if(bagSpace == BAG_SUBSCRIBER_BANK) then
+                backPackNumber = BAG_BANK
+            end
+
+
+            local itemName = GetItemName(bagSpace, index)
+            if string.len(itemName) >= 1 then
+                local uniqueId = GetItemUniqueId(bagSpace, index)
+                local itemTrait = GetItemTrait(bagSpace, index)
+                local itemStatValue = GetItemStatValue(bagSpace, index)
+                local itemArmorType = GetItemArmorType(bagSpace, index)
+                local itemType = {GetItemType(bagSpace, index)}
+                local weaponType = GetItemWeaponType(bagSpace, index)
+                local totalCount = GetSlotStackSize(bagSpace, index)
+                local itemLink = GetItemLink(bagSpace, index)
+                local itemInfo =  {GetItemInfo(bagSpace, index) }
+                local itemPlayerLocked = IsItemPlayerLocked(bagSpace, index)
+                local quality = GetItemLinkQuality(itemLink)
+                local setInfo =  {GetItemLinkSetInfo(itemLink, true) }
+                local enchantInfo = {GetItemLinkEnchantInfo(itemLink) }
+                local championPoints = GetItemRequiredChampionPoints(bagSpace, index)
+                local itemLevel = GetItemRequiredLevel(bagSpace, index)
+                local itemBound = IsItemBound(bagSpace, index)
+                local isJunk = IsItemJunk(bagSpace, index)
+                local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
+
+                local item = {
+                    uniqueId, -- Unique ID
+                    itemName, -- Name
+                    itemTrait, -- Trait
+                    itemInfo[6], -- EquipType
+                    setInfo[2], -- SetName
+                    quality, -- Quality
+                    itemArmorType, -- Heavy/Medium/Light armor
+                    tostring(itemPlayerLocked), -- Locked?
+                    enchantInfo[2], -- ItemLink enchant
+                    itemInfo[1], -- icon,
+                    itemType[1], -- Itemtype /armor/jewelry/weapon etc
+                    championPoints, -- cp needed
+                    itemLevel, -- level neeeded
+                    weaponType, -- Weapontype axe/dagger/bow etc
+                    characterId, -- characters unique id
+                    backPackNumber, -- space enum, to see if it's a bank item
+                    tostring(itemBound),
+                    totalCount,
+                    tostring(isJunk),
+                    itemLink,
+                    enchantInfo[3],
+                    traitDescription[2],
+                    itemStatValue,
+                    i,
+                    itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
+                    itemInfo[7], -- ItemStyle
+                    GetCVar("language.2"), -- Client language
+                }
+
+                return "ITEM:"..table.concat(item, ';')..";"
+            end
+        end
+
         local function exportSmithing()
             local smithingTypes = { CRAFTING_TYPE_BLACKSMITHING, CRAFTING_TYPE_CLOTHIER, CRAFTING_TYPE_WOODWORKING}
 
@@ -207,69 +271,19 @@ local function loadTesoDelve(eventCode, addOnName)
             local backPackSize = GetBagSize(bagSpace)
             local inventory = {}
 
+
             for i=0, backPackSize+1, 1 do
-
-                local itemName = GetItemName(bagSpace, i)
-                if string.len(itemName) >= 1 then
-                    local uniqueId = GetItemUniqueId(bagSpace, i)
-                    local itemTrait = GetItemTrait(bagSpace, i)
-                    local itemStatValue = GetItemStatValue(bagSpace, i)
-                    local itemArmorType = GetItemArmorType(bagSpace, i)
-                    local itemType = {GetItemType(bagSpace, i)}
-                    local weaponType = GetItemWeaponType(bagSpace, i)
-                    local totalCount = GetSlotStackSize(bagSpace, i)
-                    local itemLink = GetItemLink(bagSpace, i)
-                    local itemInfo =  {GetItemInfo(bagSpace, i) }
-                    local itemPlayerLocked = IsItemPlayerLocked(bagSpace, i)
-                    local quality = GetItemLinkQuality(itemLink)
-                    local setInfo =  {GetItemLinkSetInfo(itemLink, true) }
-                    local enchantInfo = {GetItemLinkEnchantInfo(itemLink) }
-                    local championPoints = GetItemRequiredChampionPoints(bagSpace, i)
-                    local itemLevel = GetItemRequiredLevel(bagSpace, i)
-                    local itemBound = IsItemBound(bagSpace, i)
-                    local isJunk = IsItemJunk(bagSpace, i)
-                    local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
-
-                    local item = {
-                        uniqueId, -- Unique ID
-                        itemName, -- Name
-                        itemTrait, -- Trait
-                        itemInfo[6], -- EquipType
-                        setInfo[2], -- SetName
-                        quality, -- Quality
-                        itemArmorType, -- Heavy/Medium/Light armor
-                        tostring(itemPlayerLocked), -- Locked?
-                        enchantInfo[2], -- ItemLink enchant
-                        itemInfo[1], -- icon,
-                        itemType[1], -- Itemtype /armor/jewelry/weapon etc
-                        championPoints, -- cp needed
-                        itemLevel, -- level neeeded
-                        weaponType, -- Weapontype axe/dagger/bow etc
-                        characterId, -- characters unique id
-                        bagSpace, -- space enum, to see if it's a bank item
-                        tostring(itemBound),
-                        totalCount,
-                        tostring(isJunk),
-                        itemLink,
-                        enchantInfo[3],
-                        traitDescription[2],
-                        itemStatValue,
-                        i,
-                        itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
-                        itemInfo[7], -- ItemStyle
-                        GetCVar("language.2"), -- Client language
-                    }
-
-                    itemsExported = itemsExported + 1
-                    inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')..";"
-
-                end
+                itemsExported = itemsExported + 1
+                inventory['BAG-' .. i] = exportItem(bagSpace, i)
             end
 
 
             if(bagSpace == BAG_BANK) then
                 savedVars.inventory['bank'] = {}
                 savedVars.inventory['bank'] = inventory
+            elseif(bagSpace == BAG_SUBSCRIBER_BANK) then
+                savedVars.inventory['sub-bank'] = {}
+                savedVars.inventory['sub-bank'] = inventory
             else
                 savedVars.inventory[characterId][bagSpace] = inventory
             end
@@ -344,58 +358,8 @@ local function loadTesoDelve(eventCode, addOnName)
             for index, data in pairs(SHARED_INVENTORY.bagCache[BAG_VIRTUAL])do
                 if data ~= nil then
                     local i = data.slotIndex
-                    local itemName = GetItemName(bagSpace, i)
-                    local uniqueId = GetItemUniqueId(bagSpace, i)
-                    local itemTrait = GetItemTrait(bagSpace, i)
-                    local itemStatValue = GetItemStatValue(bagSpace, i)
-                    local itemArmorType = GetItemArmorType(bagSpace, i)
-                    local itemType = {GetItemType(bagSpace, i)}
-                    local weaponType = GetItemWeaponType(bagSpace, i)
-                    local totalCount = GetSlotStackSize(bagSpace, i)
-                    local itemLink = GetItemLink(bagSpace, i)
-                    local itemInfo =  {GetItemInfo(bagSpace, i) }
-                    local itemPlayerLocked = IsItemPlayerLocked(bagSpace, i)
-                    local quality = GetItemLinkQuality(itemLink)
-                    local setInfo =  {GetItemLinkSetInfo(itemLink, true) }
-                    local enchantInfo = {GetItemLinkEnchantInfo(itemLink) }
-                    local championPoints = GetItemRequiredChampionPoints(bagSpace, i)
-                    local itemLevel = GetItemRequiredLevel(bagSpace, i)
-                    local itemBound = IsItemBound(bagSpace, i)
-                    local isJunk = IsItemJunk(bagSpace, i)
-                    local traitDescription =  {GetItemLinkTraitInfo(itemLink) }
-
-                    local item = {
-                        uniqueId, -- Unique ID
-                        itemName, -- Name
-                        itemTrait, -- Trait
-                        itemInfo[6], -- EquipType
-                        setInfo[2], -- SetName
-                        quality, -- Quality
-                        itemArmorType, -- Heavy/Medium/Light armor
-                        tostring(itemPlayerLocked), -- Locked?
-                        enchantInfo[2], -- ItemLink enchant
-                        itemInfo[1], -- icon,
-                        itemType[1], -- Itemtype /armor/jewelry/weapon etc
-                        championPoints, -- cp needed
-                        itemLevel, -- level neeeded
-                        weaponType, -- Weapontype axe/dagger/bow etc
-                        characterId, -- characters unique id
-                        bagSpace, -- space enum, to see if it's a bank item
-                        tostring(itemBound),
-                        totalCount,
-                        tostring(isJunk),
-                        itemLink,
-                        enchantInfo[3],
-                        traitDescription[2],
-                        itemStatValue,
-                        i,
-                        itemType[2], -- SpecializedItemType http://wiki.esoui.com/Globals#SpecializedItemType
-                        itemInfo[7], -- ItemStyle
-                        GetCVar("language.2") -- Client language
-                    }
-
                     itemsExported = itemsExported + 1
-                    inventory['BAG-' .. i] = "ITEM:"..table.concat(item, ';')
+                    inventory['BAG-' .. i] = exportItem(bagSpace, i)
                 end
             end
 
@@ -482,6 +446,7 @@ local function loadTesoDelve(eventCode, addOnName)
             exportInventory(BAG_BACKPACK)
             exportInventory(BAG_WORN)
             exportInventory(BAG_BANK)
+            exportInventory(BAG_SUBSCRIBER_BANK)
             exportCraftingBag()
             exportAbilities()
 
